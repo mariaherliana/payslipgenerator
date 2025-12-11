@@ -19,6 +19,14 @@ from reportlab.pdfgen import canvas
 from PIL import Image
 import base64
 
+st.markdown("""
+<style>
+label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stDateInput label {
+    color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ----------------------- Helper functions -----------------------
 
 def set_page_style():
