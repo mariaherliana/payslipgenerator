@@ -19,6 +19,19 @@ from reportlab.pdfgen import canvas
 from PIL import Image
 import base64
 
+st.markdown("""
+<style>
+/* Streamlit form field labels only */
+.stTextInput label,
+.stNumberInput label,
+.stSelectbox label,
+.stDateInput label {
+    color: #ffffff !important;
+    font-weight: 500;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ----------------------- Helper functions -----------------------
 
 def set_page_style():
