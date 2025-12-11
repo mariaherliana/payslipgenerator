@@ -111,7 +111,20 @@ def create_payslip_pdf(data: dict, logo_bytes: bytes | None = None) -> bytes:
 
     y = height - 110
 
+    # Company Info
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(40, y, data['company_name'])
+    y -= 14
+    c.setFont("Helvetica", 10)
+    for line in data['company_address'].split('
+'):
+        c.drawString(40, y, line)
+        y -= 12
+    c.drawString(40, y, f"Phone: {data['company_phone']}")
+
     # Employee info
+    y -= 24
+    c.setFont("Helvetica-Bold", 11)
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, y, "Employee Information")
     y -= 18
@@ -178,7 +191,18 @@ def create_payslip_pdf(data: dict, logo_bytes: bytes | None = None) -> bytes:
     y -= 30
     y = check_page(y)
 
-    # Benefits
+    # Employer-paid Benefits
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(40, y, "Employer-Paid Benefits")
+    y -= 16
+    c.setFont("Helvetica", 10)
+    for b in data['benefits']:
+        c.drawString(40, y, b['label'])
+        c.drawRightString(560, y, b['fmt'])
+        y -= 12
+        y = check_page(y)
+
+    # END Benefits
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, y, "Benefits (Non-financial)")
     y -= 16
@@ -204,6 +228,13 @@ set_page_style()
 st.title("Payslip Generator")
 
 with st.sidebar:
+    st.header("Company Info")
+    company_name = st.text_input("Company name", value="My Company Ltd.")
+    company_address = st.text_area("Company address", value="123 Business Road
+City, Country")
+    company_phone = st.text_input("Company phone", value="+1 234 567 890")
+
+    st.header("Settings")
     st.header("Settings")
     currency = st.selectbox("Currency", ["IDR", "SGD", "USD", "GBP", "EUR"], index=2)
     number_format = st.radio("Numbering format", ["US", "EU"], index=0, help="US: 1,234.56 | EU: 1.234,56")
@@ -245,14 +276,15 @@ with st.form("payslip_form"):
         amount = st.number_input(f"Deduction {i+1} amount", min_value=0.0, value=0.0, key=f"ded_amount_{i}")
         deductions.append({"label": label, "amount": amount})
 
-    st.subheader("Benefits (non-financial)")
-    benefits = []
-    ben_cnt = st.number_input("Number of benefits", min_value=0, max_value=10, value=1)
-    for i in range(ben_cnt):
-        b = st.text_input(f"Benefit {i+1}", value=("Health Insurance" if i==0 else f"Benefit {i+1}"), key=f"ben_{i}")
-        benefits.append(b)
+    st.subheader("Benefits (employer-paid)")
+benefits = []
+ben_cnt = st.number_input("Number of benefits", min_value=0, max_value=10, value=1)
+for i in range(ben_cnt):
+    label = st.text_input(f"Benefit {i+1} label", value=("Health Insurance" if i==0 else f"Benefit {i+1}"), key=f"ben_label_{i}")
+    amount = st.number_input(f"Benefit {i+1} amount", min_value=0.0, value=0.0, key=f"ben_amount_{i}")
+    benefits.append({"label": label, "amount": amount})
 
-    st.form_submit_button("Generate Payslip")
+st.form_submit_button("Generate Payslip")("Generate Payslip")
 
 # Perform calculations
 ot_amount = ot_hours * ot_rate
@@ -262,6 +294,8 @@ total_earnings = base_salary + ot_amount + total_allowances
 net_pay = total_earnings - total_deductions
 
 # Prepare formatted strings
+for b in benefits:
+    b['fmt'] = format_amount(b['amount'], currency, number_format)
 fmt_base_salary = format_amount(base_salary, currency, number_format)
 fmt_ot_rate = format_amount(ot_rate, currency, number_format)
 fmt_ot_amount = format_amount(ot_amount, currency, number_format)
@@ -283,6 +317,8 @@ with colA:
     preview_html = f"""
     <div style='background:#062b43;padding:20px;border-radius:8px;color:#e6f2fb'>
       <h2 style='margin:0;color:#dff4ff'>Payslip</h2>
+      <p style='margin:4px 0'><strong>{company_name}</strong><br/>{company_address.replace('
+','<br/>')}<br/>Phone: {company_phone}</p>
       <p style='margin:4px 0' class='muted'>Payslip No: {payslip_no} &nbsp;&nbsp; Date: {date}</p>
       <hr style='border:0;border-top:1px solid #0b445f' />
       <h4 style='margin-bottom:4px'>Employee</h4>
@@ -305,10 +341,10 @@ with colA:
 
     preview_html += f"<h3 style='margin-top:12px'>Net Pay: <span style='float:right'>{fmt_net_pay}</span></h3>"
 
-    preview_html += "<h4 style='margin-top:18px'>Benefits</h4><ul>"
-    for b in benefits:
-        preview_html += f"<li>{b}</li>"
-    preview_html += "</ul></div>"
+    preview_html += "<h4 style='margin-top:18px'>Employer-Paid Benefits</h4><table style='width:100%'>"
+for b in benefits:
+    preview_html += f"<tr><td>{b['label']}</td><td style='text-align:right'>{b['fmt']}</td></tr>"
+preview_html += "</table>"</div>"
 
     st.markdown(preview_html, unsafe_allow_html=True)
 
@@ -323,6 +359,9 @@ with colB:
             pass
 
     data = {
+        'company_name': company_name,
+        'company_address': company_address,
+        'company_phone': company_phone,
         'date': date.strftime("%Y-%m-%d"),
         'payslip_no': payslip_no,
         'employee_name': employee_name,
