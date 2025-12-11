@@ -116,7 +116,8 @@ def create_payslip_pdf(data: dict, logo_bytes: bytes | None = None) -> bytes:
     c.drawString(40, y, data['company_name'])
     y -= 14
     c.setFont("Helvetica", 10)
-    for line in data['company_address'].split("\n"):
+    for line in data['company_address'].split("
+"):
         c.drawString(40, y, line)
         y -= 12
     c.drawString(40, y, f"Phone: {data['company_phone']}")
@@ -230,7 +231,7 @@ with st.sidebar:
     st.header("Company Info")
     company_name = st.text_input("Company name", value="My Company Ltd.")
     company_address = st.text_area("Company address", value="123 Business Road
-City, Country")
+Business City, 12345")
     company_phone = st.text_input("Company phone", value="+1 234 567 890")
 
     st.header("Settings")
