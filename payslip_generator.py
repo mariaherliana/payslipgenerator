@@ -229,8 +229,8 @@ st.title("Payslip Generator")
 with st.sidebar:
     st.header("Company Info")
     company_name = st.text_input("Company name", value="My Company Ltd.")
-    company_address = st.text_area("Company address", value=123 Business Road
-City, Country)
+    company_address = st.text_area("Company address", value="123 Business Road
+City, Country")
     company_phone = st.text_input("Company phone", value="+1 234 567 890")
 
     st.header("Settings")
