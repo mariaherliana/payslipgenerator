@@ -231,7 +231,7 @@ with st.sidebar:
     company_name = st.text_input("Company name", value="My Company Ltd.")
     company_address = st.text_area("Company address", value='''123 Business Road\nBusiness City\nCountry''')
 Business City
-Country")
+Country''')
 Business City, 12345")
     company_phone = st.text_input("Company phone", value="+1 234 567 890")
 
