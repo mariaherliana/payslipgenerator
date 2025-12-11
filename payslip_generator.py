@@ -229,7 +229,7 @@ st.title("Payslip Generator")
 with st.sidebar:
     st.header("Company Info")
     company_name = st.text_input("Company name", value="My Company Ltd.")
-    company_address = st.text_area("Company address", value="123 Business Road
+    company_address = st.text_area("Company address", value='''123 Business Road\nBusiness City\nCountry''')
 Business City
 Country")
 Business City, 12345")
