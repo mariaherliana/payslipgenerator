@@ -79,127 +79,117 @@ def format_amount(value: float, currency: str, number_format: str = "US") -> str
         return f"{value}"
 
 
-# Create a bytes PDF using reportlab
 def create_payslip_pdf(data: dict, logo_bytes: bytes | None = None) -> bytes:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
-    # Colors and style
-    header_color = colors.HexColor("#083a5d")
-    accent_color = colors.HexColor("#0b5b8a")
-    text_color = colors.white
+    def check_page(y):
+        if y < 80:
+            c.showPage()
+            return height - 80
+        return y
 
-    # Header rectangle
+    # Colors
+    header_color = colors.HexColor("#083a5d")
+    text_color = colors.black
+
+    # Header block
     c.setFillColor(header_color)
     c.rect(0, height - 80, width, 80, fill=1, stroke=0)
 
-    # Optional logo
-    if logo_bytes:
-        try:
-            img = Image.open(BytesIO(logo_bytes))
-            img_w, img_h = img.size
-            max_w = 80
-            ratio = max_w / img_w
-            img = img.resize((int(img_w * ratio), int(img_h * ratio)))
-            img_io = BytesIO()
-            img.save(img_io, format="PNG")
-            img_io.seek(0)
-            c.drawImage(ImageReader(img_io), 20, height - 70, preserveAspectRatio=True, mask='auto')
-        except Exception:
-            pass
-
-    # Title
-    c.setFillColor(text_color)
+    # Title + Meta
+    c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 20)
     c.drawString(120, height - 45, "Payslip")
-
-    # Meta
     c.setFont("Helvetica", 10)
     c.drawString(120, height - 60, f"Date: {data['date']}")
     c.drawRightString(width - 40, height - 45, f"Payslip No: {data['payslip_no']}")
 
-    # Employee block
+    # Reset to dark text for body
+    c.setFillColor(text_color)
+
     y = height - 110
-    c.setFillColor(colors.HexColor("#dff4ff"))
+
+    # Employee info
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, y, "Employee Information")
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica", 10)
     y -= 18
+    c.setFont("Helvetica", 10)
     c.drawString(40, y, f"Name: {data['employee_name']}")
     c.drawString(300, y, f"Employee ID: {data['employee_id']}")
     y -= 14
     c.drawString(40, y, f"Position: {data['position']}")
     c.drawString(300, y, f"Period: {data['period']}")
 
-    # Earnings / Deductions
+    # Earnings / Deductions header
     y -= 28
+    y = check_page(y)
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, y, "Earnings")
     c.drawString(300, y, "Amount")
     c.drawString(380, y, "Deductions")
     c.drawString(520, y, "Amount")
-    y -= 12
+    y -= 14
+
     c.setFont("Helvetica", 10)
 
-    # Base salary
+    # Base Salary
     c.drawString(40, y, "Base Salary")
-    c.drawRightString(360, y, data['fmt_base_salary'])
-    # Deductions first row
-    if data['deductions']:
-        d0 = data['deductions'][0]
-        c.drawString(380, y, d0['label'])
-        c.drawRightString(560, y, d0['fmt'])
+    c.drawRightString(360, y, data["fmt_base_salary"])
+    if data["deductions"]:
+        c.drawString(380, y, data["deductions"][0]["label"])
+        c.drawRightString(560, y, data["deductions"][0]["fmt"])
     y -= 14
+    y = check_page(y)
 
     # OT
     c.drawString(40, y, f"Overtime ({data['ot_hours']} hrs @ {data['fmt_ot_rate']}/hr)")
-    c.drawRightString(360, y, data['fmt_ot_amount'])
-    if len(data['deductions']) > 1:
-        d1 = data['deductions'][1]
-        c.drawString(380, y, d1['label'])
-        c.drawRightString(560, y, d1['fmt'])
+    c.drawRightString(360, y, data["fmt_ot_amount"])
+    if len(data["deductions"]) > 1:
+        c.drawString(380, y, data["deductions"][1]["label"])
+        c.drawRightString(560, y, data["deductions"][1]["fmt"])
     y -= 14
+    y = check_page(y)
 
     # Allowances
-    for i, a in enumerate(data['allowances']):
-        c.drawString(40, y, a['label'])
-        c.drawRightString(360, y, a['fmt'])
-        if len(data['deductions']) > 2 + i:
-            di = data['deductions'][2 + i]
-            c.drawString(380, y, di['label'])
-            c.drawRightString(560, y, di['fmt'])
+    for i, a in enumerate(data["allowances"]):
+        c.drawString(40, y, a["label"])
+        c.drawRightString(360, y, a["fmt"])
+        if len(data["deductions"]) > 2 + i:
+            d = data["deductions"][2 + i]
+            c.drawString(380, y, d["label"])
+            c.drawRightString(560, y, d["fmt"])
         y -= 14
+        y = check_page(y)
 
     # Totals
-    y -= 6
+    y -= 10
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, y, "Total Earnings")
-    c.drawRightString(360, y, data['fmt_total_earnings'])
+    c.drawRightString(360, y, data["fmt_total_earnings"])
     c.drawString(380, y, "Total Deductions")
-    c.drawRightString(560, y, data['fmt_total_deductions'])
-    y -= 20
+    c.drawRightString(560, y, data["fmt_total_deductions"])
+    y -= 22
 
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(40, y, "Net Pay")
     c.setFont("Helvetica-Bold", 14)
-    c.drawRightString(560, y, data['fmt_net_pay'])
+    c.drawString(40, y, "Net Pay:")
+    c.drawRightString(560, y, data["fmt_net_pay"])
     y -= 30
+    y = check_page(y)
 
-    # Benefits (non-financial)
+    # Benefits
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, y, "Benefits (Non-financial)")
-    y -= 14
+    y -= 16
     c.setFont("Helvetica", 10)
-    for b in data['benefits']:
+
+    for b in data["benefits"]:
         c.drawString(40, y, f"- {b}")
         y -= 12
-        if y < 80:
-            c.showPage()
-            y = height - 80
+        y = check_page(y)
 
-    c.showPage()
+    # IMPORTANT: remove final c.showPage()
     c.save()
     buffer.seek(0)
     return buffer.read()
