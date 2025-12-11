@@ -116,8 +116,7 @@ def create_payslip_pdf(data: dict, logo_bytes: bytes | None = None) -> bytes:
     c.drawString(40, y, data['company_name'])
     y -= 14
     c.setFont("Helvetica", 10)
-    for line in data['company_address'].split("
-"):
+    for line in data['company_address'].split("\n")):
         c.drawString(40, y, line)
         y -= 12
     c.drawString(40, y, f"Phone: {data['company_phone']}")
